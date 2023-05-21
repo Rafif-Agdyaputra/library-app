@@ -1,8 +1,8 @@
-let currentPage = 'home';
+let currentPage = "home";
 let currentBook = null;
 let books = [];
 
-const main = document.querySelector('main');
+const main = document.querySelector("main");
 
 const pageListMainContent = `<h2 class="text-2xl font-bold mb-4">Daftar Buku Perpustakaan</h2>
 
@@ -22,13 +22,13 @@ const pageListMainContent = `<h2 class="text-2xl font-bold mb-4">Daftar Buku Per
 
 const pageEditBookMainContent = `<h2 class="text-2xl font-bold mb-4">Edit Buku</h2>
 
-<form class="max-w-sm mx-auto" onsubmit="return handleEditForm(event)">
+<form class="max-w-sm mx-auto" onsubmit="return handleEditForm(event)" method="PUT">
 </form>
 `;
 
 const pageAddBookMainContent = `<h2 class="text-2xl font-bold mb-4">Tambah Buku</h2>
 
-<form class="max-w-sm mx-auto" onsubmit="return handleAddForm(event)">
+<form class="max-w-sm mx-auto" onsubmit="return handleAddForm(event)" method="POST">
   <div class="mb-4">
     <label for="title" class="block text-gray-700 font-semibold mb-2">Judul Buku</label>
     <input required type="text" id="title" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500" />
@@ -53,14 +53,17 @@ const pageAddBookMainContent = `<h2 class="text-2xl font-bold mb-4">Tambah Buku<
 
 async function handleClickEditButton(bookId) {
   try {
-    // Ambil data buku dari server berdasarkan id, simpan hasilnya ke variabel currentBook
-    // TODO: answer here
+    const response = await fetch(`http://localhost:3333/books/${bookId}`, {
+      method: 'PUT'
+    });
+    const data = await response.json();
+    currentBook = data;
 
-    currentPage = 'edit';
+    currentPage = "edit";
     loadPage();
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat mengambil data buku');
+    console.log("Terjadi kesalahan saat mengambil data buku");
   }
 }
 async function handleClickDeleteButton(bookId) {
@@ -72,10 +75,12 @@ async function handleClickDeleteButton(bookId) {
 
     //panggil function deleteBook dengan parameter bookId
     // TODO: answer here
+
+    await deleteBook(bookId);
     loadPage();
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat menghapus buku');
+    console.log("Terjadi kesalahan saat menghapus buku");
   }
 }
 
@@ -99,13 +104,30 @@ async function handleEditForm(event) {
     // panggil function editBook dengan parameter book
     // TODO: answer here
 
+    event.preventDefault(); // gunakan preventDefault untuk mencegah browser melakukan reload halaman
+
+    const form = event.target; // gunakan event.target untuk mengakses <form></form>
+    const title = form.title.value; // gunakan form.title.value untuk mengambil value dari input title
+    const author = form.author.value; // gunakan form.author.value untuk mengambil value dari input author
+    const year = form.year.value; // gunakan form.year.value untuk mengambil value dari input year
+    const quantity = form.quantity.value; // gunakan form.quantity.value untuk mengambil value dari input quantity
+
+    const book = {
+      title: title,
+      author: author,
+      year: year,
+      quentity: quantity,
+    }; // simpan data buku dalam objek book
+
+    await editBook(book); // panggil fungsi editBook dengan parameter book
+
     currentBook = null;
 
-    currentPage = 'home';
+    currentPage = "home";
     loadPage();
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat mengubah buku');
+    console.log("Terjadi kesalahan saat mengubah buku");
   }
 }
 
@@ -128,29 +150,47 @@ async function handleAddForm(event) {
 
     // panggil function addBook dengan parameter book
     // TODO: answer here
+    event.preventDefault(); // gunakan preventDefault untuk mencegah browser melakukan reload halaman
 
-    currentPage = 'home';
+    const form = event.target; // gunakan event.target untuk mengakses <form></form>
+    const title = form.title.value; // gunakan form.title.value untuk mengambil value dari input title
+    const author = form.author.value; // gunakan form.author.value untuk mengambil value dari input author
+    const year = form.year.value; // gunakan form.year.value untuk mengambil value dari input year
+    const quantity = form.quantity.value; // gunakan form.quantity.value untuk mengambil value dari input quantity
+
+    const book = {
+      title: title,
+      author: author,
+      year: year,
+      quantity: quantity,
+    }; // simpan data buku dalam objek book
+
+    await addBook(book); // panggil fungsi addBook dengan parameter book
+
+    currentPage = "home";
     loadPage();
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat menambah buku');
+    console.log("Terjadi kesalahan saat menambah buku");
   }
 }
 
 function handleClickAddNav() {
   // ubah currentPage menjadi 'add'
   // TODO: answer here
+  currentPage = "add";
   loadPage();
 }
 
 // add event listener click tag a didalam li dengan function handleClickAddNav
-const navLinks = document.querySelectorAll('li a');
+const navLinks = document.querySelectorAll("li a");
 navLinks.forEach((navLink) => {
   // TODO: answer here
+  navLink.addEventListener("click", handleClickAddNav);
 });
 
 function generateRows(books) {
-  let rows = '';
+  let rows = "";
   if (books.length === 0) {
     rows = `<tr>
    <td colspan="6" class="px-6 py-4 border-b text-center">Tidak ada buku yang ditemukan</td>
@@ -171,24 +211,21 @@ function generateRows(books) {
       Jangan lupa untuk ganti BookId dengan id dari book yang sedang di looping
       simpan row yang dibuat ke variabel rows
     */
-
-    for(let b = 0; b < books.length; b++) {
-      const book = books[b];
-      const { id, title, author, year, quantity } = book;
-      const row = `
-      <tr class="book-item">
-        <td class="px-6 py-4 border-b">${title}</td>
-        <td class="px-6 py-4 border-b">${author}</td>
-        <td class="px-6 py-4 border-b">${year}</td>
-        <td class="px-6 py-4 border-b">${quantity}</td>
+    // TODO: answer here
+    rows = books
+      .map((book) => {
+        return `<tr class="book-item"> 
+        <td class="px-6 py-4 border-b">${book.title}</td>
+        <td class="px-6 py-4 border-b">${book.author}</td>
+        <td class="px-6 py-4 border-b">${book.year}</td>
+        <td class="px-6 py-4 border-b">${book.quantity}</td>
         <td class="px-6 py-4 border-b text-center">
-          <button class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onclick="handleClickEditButton(${id})">Edit</button>
-          <button class="inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onclick="handleClickDeleteButton(${id})">Hapus</button>  
+          <button class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onclick="handleClickEditButton(${book.id})">Edit</button>
+          <button class="inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onclick="handleClickDeleteButton(${book.id})">Hapus</button>
         </td>
-      </tr>
-      `;
-      rows += row;
-    }
+      </tr>`;
+      })
+      .join("");
   }
   return rows;
 }
@@ -217,33 +254,24 @@ function generateEditFormInput() {
 
 async function loadPage() {
   switch (currentPage) {
-    case 'home':
+    case "home":
       // panggil function fetchBooks
+      // TODO: answer here
       const books = await fetchBooks();
-
       main.innerHTML = pageListMainContent;
 
-      const tableBody = document.querySelector('tbody');
-      /* 
-        panggil function generateRows dengan parameter books dan simpan hasilnya ke variabel rows
-        kemudian isi innerHTML dari tableBody dengan rows
-      */
+      const tableBody = document.querySelector("tbody");
       const rows = generateRows(books);
       tableBody.innerHTML = rows;
-
       break;
-    case 'edit':
+    case "edit":
       main.innerHTML = pageEditBookMainContent;
 
-      const form = document.querySelector('form');
-
-      /* 
-        panggil function generateEditFormInput dan simpan hasilnya ke variabel formInput
-        kemudian isi innerHTML dari form dengan formInput
-      */
-      // TODO: answer here
+      const form = document.querySelector("form");
+      const formInput = generateEditFormInput();
+      form.innerHTML = formInput;
       break;
-    case 'add':
+    case "add":
       main.innerHTML = pageAddBookMainContent;
       break;
   }
@@ -251,20 +279,12 @@ async function loadPage() {
 
 async function fetchBooks() {
   try {
-    const res = await fetch('http://localhost:3333/books');
-    const data = await res.json();
-
-    return books = data.map(value => ({
-      id: value.id,
-      title: value.title,
-      author: value.author,
-      year: value.year,
-      quantity: value.quantity
-    }))
-    
+    const response = await fetch("http://localhost:3333/books");
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat mengambil data buku');
+    console.log("Terjadi kesalahan saat mengambil data buku");
   }
 }
 
@@ -274,20 +294,23 @@ async function addBook(book) {
       tambahkan buku baru ke http://localhost:3333/books dengan method POST
       body yang dikirim adalah book yang dikirimkan sebagai parameter function
     */
-    await fetch('http://localhost:3333/books', {
-      method: 'POST',
+    // TODO: answer here
+    const response = await fetch("http://localhost:3333/books", {
+      method: "POST",
+      body: JSON.stringify(book),
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(book)
-    }).then(res => res.json()).then(data => {
-      console.log('Berhasil tambah buku:', data);
-    }, reason => {
-      console.log('Error', reason);
-    })
+    });
+    if (!response.ok) {
+      throw new Error("Terjadi kesalahan saat menambah buku");
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat menambah buku');
+    console.log("Terjadi kesalahan saat menambah buku");
   }
 }
 
@@ -298,9 +321,23 @@ async function editBook(book) {
       body yang dikirim adalah book yang dikirimkan sebagai parameter function
     */
     // TODO: answer here
+    const response = await fetch(`http://localhost:3333/books/${book.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(book),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Terjadi kesalahan saat mengubah buku");
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat mengubah buku');
+    console.log("Terjadi kesalahan saat mengubah buku");
   }
 }
 
@@ -310,16 +347,20 @@ async function deleteBook(bookId) {
       hapus buku yang ada di http://localhost:3333/books/:id dengan method DELETE
       id buku yang akan dihapus dikirimkan sebagai parameter function
     */
-    await fetch(`http://localhost:3333/books/${booldId}`, {
-      method: 'DELETE'
-    }).then(res => {
-      console.log('Berhasil hapus buku:', res);
-    }, reason => {
-      console.log('Error', reason);
-    })
+    // TODO: answer here
+    const response = await fetch(`http://localhost:3333/books/${bookId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("Terjadi kesalahan saat menghapus buku");
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.log(error);
-    console.log('Terjadi kesalahan saat menghapus buku');
+    console.log("Terjadi kesalahan saat menghapus buku");
   }
 }
 
